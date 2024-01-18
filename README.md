@@ -14,21 +14,13 @@ The model is pretrained on a mixture of publicly available datasets, achieving s
 
 ## Examples
 
-### Text Generation
-
 <div align=center><img src="docs/figures/text_generation.png" style="zoom:60%;" /></div>
-
-### Image Generation
 
 <div align=center><img src="docs/figures/image_generation.png" style="zoom:75%;" /></div>
 
-### Segmentation-to-Image Generation
+<div align=center><img src="docs/figures/segment.png" width=70% height=70%/></div>
 
-<div align=center><img src="docs/figures/segment.png" width="700" height="500"/></div>
-
-### Interleaved Image-Text Generation
-
-<div align=center><img src="docs/figures/interleaved.png" width="500" height="900" /></div>
+<div align=center><img src="docs/figures/interleaved.png" width=50% height=50% /></div>
 
 ## Setup
 
