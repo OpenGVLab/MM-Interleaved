@@ -1,0 +1,208 @@
+# Training Arguments
+
+fp16: True
+max_steps: 15_000
+per_device_train_batch_size: &per_device_train_batch_size 4
+per_device_eval_batch_size: 2
+dataloader_num_workers: &num_workers 8
+data_seed: &data_seed 0
+seed: 32
+
+## optimizer & scheduler
+
+optim: adamw_torch
+learning_rate: 1.0e-4
+weight_decay: 0.05
+adam_beta1: 0.9
+adam_beta2: 0.995
+adam_epsilon: 1.0e-6
+lr_for_random_params_list: [1.0e-4, 1.0e-5, 1.0e-4, 1.0e-5]
+wd_for_random_params_list: [0.0, 0.0, null, null]
+random_params_list: [llama_cross_attn.gate, sampling_offsets, llama_cross_attn, image_decoder.decoder.unet]
+
+lr_scheduler_type: "cosine"
+warmup_steps: 1_000
+
+## evaluation & saving
+
+evaluation_strategy: "steps"
+eval_steps: 1_000
+save_strategy: "steps"
+save_steps: 1_000
+save_total_limit: 5
+fp16_full_eval: false
+
+generate_mode: generate_both
+
+## logging
+
+report_to: ['tensorboard']
+logging_steps: 10
+disable_tqdm: False
+log_level: info
+
+## misc
+
+tf32: True
+ddp_find_unused_parameters: False
+
+## deepspeed
+
+deepspeed: './mm_interleaved/configs/release/deepspeed_zero1.json'
+
+
+# MODEL
+
+model:
+  llm_model_path: &tokenizer_path ./assets/lmsys/vicuna-13b-v1.3
+  num_img_token: &img_len 64
+  cross_attention_frequency: 4
+
+  dataset_to_ignore_noimage_cond_loss: [laion_en, laion_coco]
+
+  visual_tokenizer_config:
+    encoder_model_path: ./assets/openai/clip-vit-large-patch14
+    perceiver_config:
+      num_queries: 64
+      hidden_size: 768
+      encoder_hidden_size: 1024
+      cross_attention_frequency: 2
+      num_hidden_layers: 12
+      num_attention_heads: 12
+      qk_normalization: True
+  image_decoder_config:
+    pretrained_model_name_or_path: './assets/stabilityai/stable-diffusion-2-1-base'
+    sd_base_seed: 0
+    sd_use_random_seed: False
+    perceiver_config:
+      num_queries: 77
+      hidden_size: 1024
+      encoder_hidden_size: 5120
+      cross_attention_frequency: 1
+      num_hidden_layers: 1
+      num_attention_heads: 16
+      hidden_dropout_prob: 0.
+      attention_probs_dropout_prob: 0.
+
+# DATA
+
+data:
+  train:
+    name: random_mix
+    probs: [1., 1., 1., 2.]
+    sampling_type: longest
+    seed: *data_seed
+    dataset_names: [blip2, laion_en, laion_coco, mmc4]
+
+    datasets:
+
+    - name: laion_wds
+      data_root: "[THE IMAGE DIRECTORY OF BLIP-2 ANNOTATED DATA]"
+      annt_root: "[THE ANNOTATION DIRECTORY OF BLIP-2 ANNOTATED DATA]"
+      tokenizer_path: *tokenizer_path
+
+      per_device_batch_size: 2
+      input_shards: "[SHARDED FILE NAMES]" # e.g '{0000000..0020000}.txt'
+      num_samples: "[ESTIMATED TOTAL NUMBER OF TRAINING SAMPLES]" # e.g. 10_000
+      seed: *data_seed
+      num_workers: *num_workers
+
+      num_img_token: *img_len
+      max_num_images_per_seq: 30
+
+      transform: &train_transform
+        aug_type: 'dual_numpy'
+        resolution: &image_size 224
+        resolution2: &image_size_dec 512
+
+    - name: laion_wds
+      data_root: "[THE IMAGE DIRECTORY OF LAION-EN]"
+      annt_root: "[THE ANNOTATION DIRECTORY OF LAION-EN]"
+      tokenizer_path: *tokenizer_path
+
+      per_device_batch_size: 2
+      input_shards: "[SHARDED FILE NAMES]" # e.g '{0000000..0020000}.txt'
+      num_samples: "[ESTIMATED TOTAL NUMBER OF TRAINING SAMPLES]" # e.g. 10_000
+      seed: *data_seed
+      num_workers: *num_workers
+
+      num_img_token: *img_len
+      max_num_images_per_seq: 30
+
+      transform: *train_transform
+
+    - name: laion_wds
+      data_root: "[THE IMAGE DIRECTORY OF LAION-COCO]"
+      annt_root: "[THE ANNOTATION DIRECTORY OF LAION-COCO]"
+      tokenizer_path: *tokenizer_path
+
+      per_device_batch_size: 2
+      input_shards: "[SHARDED FILE NAMES]" # e.g '{0000000..0020000}.txt'
+      num_samples: "[ESTIMATED TOTAL NUMBER OF TRAINING SAMPLES]" # e.g. 10_000
+      seed: *data_seed
+      num_workers: *num_workers
+
+      num_img_token: *img_len
+      max_num_images_per_seq: 30
+
+      transform: *train_transform
+
+    - name: mmc4_wds
+      data_root: "[THE IMAGE DIRECTORY OF MMC4]" # e.g. './assets/datasets/mmc4/ai2-jackh-mmc4-gated-public-41423/images/'
+      annt_root: "[THE ANNOTATION DIRECTORY OF MMC4]" # e.g. './assets/datasets/mmc4/ai2-jackh-mmc4-gated-public-41423/data/'
+      tokenizer_path: *tokenizer_path
+
+      per_device_batch_size: 4
+      input_shards: "[SHARDED FILE NAMES]" # 'docs_shard_{0..23099}_v2.jsonl'
+      num_samples: "[ESTIMATED TOTAL NUMBER OF TRAINING SAMPLES]" # e.g. 10_000
+      seed: *data_seed
+      num_workers: *num_workers
+
+      num_img_token: *img_len
+      max_num_images_per_seq: 15
+
+      transform: *train_transform
+
+  val:
+  - name: coco_karpathy
+    data_root: assets/datasets/coco
+    annt_root: assets/datasets/coco
+    phase: test
+    year: 2014
+
+    collator: ImageTextPairCollator
+    num_img_token: *img_len
+    tokenizer_path: *tokenizer_path
+    collate_mode: generate_both
+
+    transform:
+      aug_type: 'numpy'
+      resolution: *image_size
+
+  - name: okvqa
+    data_root: assets/datasets/coco
+    annt_root: assets/datasets/OK-VQA
+    phase: val
+
+    collator: VQACollator
+    num_img_token: *img_len
+    tokenizer_path: *tokenizer_path
+    collate_mode: 'generate_vqa'
+
+    transform:
+      aug_type: 'numpy'
+      resolution: *image_size
+
+  - name: textvqa
+    data_root: assets/datasets/textvqa/train_images
+    annt_root: assets/datasets/textvqa/TextVQA
+    phase: val
+
+    collator: VQACollator
+    num_img_token: *img_len
+    tokenizer_path: *tokenizer_path
+    collate_mode: 'generate_vqa'
+
+    transform:
+      aug_type: 'numpy'
+      resolution: *image_size

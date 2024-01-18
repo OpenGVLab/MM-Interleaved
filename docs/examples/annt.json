@@ -1,0 +1,35 @@
+[
+    {
+        "sentences": [
+            "a kitchen is shown with a variety of items on the counters."
+        ],
+        "images": [
+            "./assets/dataset/coco/val2014/COCO_val2014_000000384213.jpg"
+        ],
+        "sentence_ixs": [
+            0 
+        ],
+        "image_first": [
+            false 
+        ],
+        "generate_mode": "generate_images",
+        "num_iter": 1
+    },
+
+    {
+        "sentences": [
+            "A photo of"
+        ],
+        "images": [
+            "./assets/dataset/coco/val2014/COCO_val2014_000000384213.jpg"
+        ],
+        "sentence_ixs": [
+            0 
+        ],
+        "image_first": [
+            true
+        ],
+        "generate_mode": "generate_texts",
+        "num_iter": 1
+    }
+]

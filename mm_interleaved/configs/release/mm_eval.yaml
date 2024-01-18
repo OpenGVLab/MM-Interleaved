@@ -1,0 +1,229 @@
+# Training Arguments
+
+load_from: OUTPUT/mm_interleaved_pretrain
+
+fp16: True
+per_device_eval_batch_size: 2
+dataloader_num_workers: &num_workers 8
+data_seed: &data_seed 0
+seed: 32
+
+## logging
+
+report_to: ['tensorboard']
+
+
+# MODEL
+
+model:
+  llm_model_path: &tokenizer_path ./assets/lmsys/vicuna-13b-v1.3
+  num_img_token: &img_len 64
+
+  visual_tokenizer_config:
+    encoder_model_path: ./assets/openai/clip-vit-large-patch14
+    perceiver_config:
+      num_queries: 64
+      hidden_size: 768
+      encoder_hidden_size: 1024
+      cross_attention_frequency: 2
+      num_hidden_layers: 12
+      num_attention_heads: 12
+      qk_normalization: True
+  image_decoder_config:
+    pretrained_model_name_or_path: ./assets/stabilityai/stable-diffusion-2-1-base
+    sd_base_seed: 30_000
+    sd_use_random_seed: True
+    perceiver_config:
+      num_queries: 77
+      hidden_size: 1024
+      encoder_hidden_size: 5120
+      cross_attention_frequency: 1
+      num_hidden_layers: 1
+      num_attention_heads: 16
+      hidden_dropout_prob: 0.
+      attention_probs_dropout_prob: 0.
+
+# DATA
+
+data:
+  val:
+  - name: coco_karpathy
+    data_root: assets/datasets/coco
+    annt_root: assets/datasets/coco
+    phase: test
+    year: 2014
+
+    collator: ImageTextPairCollator
+    num_img_token: *img_len
+    tokenizer_path: *tokenizer_path
+    collate_mode: generate_texts
+
+    transform:
+      aug_type: 'numpy'
+      resolution: &image_size 224
+  
+  - name: flickr30k
+    data_root: assets/datasets/flickr30k/flickr30k-images
+    annt_file: assets/datasets/flickr30k/test1k.token.coco_format
+
+    collator: ImageTextPairCollator
+    num_img_token: *img_len
+    tokenizer_path: *tokenizer_path
+    collate_mode: generate_texts
+
+    transform:
+      aug_type: 'numpy'
+      resolution: *image_size
+
+  - name: nocaps
+    data_root: assets/datasets/nocaps/images
+    annt_file: assets/datasets/nocaps/nocaps_val_4500_captions.json
+
+    collator: ImageTextPairCollator
+    num_img_token: *img_len
+    tokenizer_path: *tokenizer_path
+    collate_mode: generate_texts
+
+    transform:
+      aug_type: 'numpy'
+      resolution: *image_size
+
+  - name: image2paragraph
+    data_root: ./assets/datasets/image2paragraph/images/
+    annt_root: ./assets/datasets/image2paragraph
+    phase: test
+
+    collator: ImageTextPairCollator
+    num_img_token: *img_len
+    tokenizer_path: *tokenizer_path
+    collate_mode: generate_texts
+    generation_kwargs:
+      max_length: 90
+      min_length: 90
+      repetition_penalty: 1.2
+    instr_prompts:
+      image: []
+      text: [
+              "The image depicts",
+              "{image}Please describe the image in detail.",
+              "",
+            ]
+
+    transform:
+      aug_type: 'numpy'
+      resolution: *image_size
+
+  - name: visdial
+    data_root: assets/datasets/visdial
+    annt_root: assets/datasets/visdial
+    phase: val
+
+    collator: VisDialCollator
+    num_img_token: *img_len
+    tokenizer_path: *tokenizer_path
+    collate_mode: generate_scores
+
+    transform:
+      aug_type: 'numpy'
+      resolution: *image_size
+
+  - name: coco
+    data_root: assets/datasets/coco
+    annt_root: assets/datasets/coco
+    phase: val
+    year: 2014
+    total_length: 30_000
+    rerank_by_clip: True
+
+    collator: ImageTextPairCollator
+    num_img_token: *img_len
+    tokenizer_path: *tokenizer_path
+    collate_mode: generate_images
+    generation_kwargs:
+      guidance_scale: 3.5
+      num_inference_steps: 250
+      num_validation_images: 8
+
+    transform:
+      aug_type: 'numpy'
+      resolution: *image_size
+
+  - name: lncoco
+    data_root: assets/datasets/coco
+    annt_root: assets/datasets/lncoco
+    phase: val
+    total_length: 30_000
+
+    collator: ImageTextPairCollator
+    num_img_token: *img_len
+    tokenizer_path: *tokenizer_path
+    collate_mode: generate_images
+    generation_kwargs:
+      guidance_scale: 3.5
+      num_inference_steps: 250
+      num_validation_images: 1
+
+    transform:
+      aug_type: 'numpy'
+      resolution: *image_size
+
+  - name: vqav2
+    data_root: assets/datasets/coco
+    annt_root: assets/datasets/VQAv2
+    phase: val
+
+    collator: VQACollator
+    num_img_token: *img_len
+    tokenizer_path: *tokenizer_path
+    collate_mode: generate_vqa
+
+    transform:
+      aug_type: 'numpy'
+      resolution: *image_size
+
+  - name: okvqa
+    data_root: assets/datasets/coco
+    annt_root: assets/datasets/OK-VQA
+    phase: val
+
+    collator: VQACollator
+    num_img_token: *img_len
+    tokenizer_path: *tokenizer_path
+    collate_mode: generate_vqa
+
+    transform:
+      aug_type: 'numpy'
+      resolution: *image_size
+
+  - name: vizwiz_vqa
+    data_root: assets/datasets/VizWiz
+    annt_root: assets/datasets/VizWiz
+    phase: val
+
+    collator: VQACollator
+    num_img_token: *img_len
+    tokenizer_path: *tokenizer_path
+    collate_mode: generate_vqa
+    instr_prompts: [
+      "The answer is:",
+      "Based on the image, please answer the question. {image}{question} When the provided information is insufficient, respond with 'Unanswerable'. Please provide an accurate answer within one word.",
+      "",
+    ]
+
+    transform:
+      aug_type: 'numpy'
+      resolution: *image_size
+
+  - name: textvqa
+    data_root: assets/datasets/textvqa/train_images
+    annt_root: assets/datasets/textvqa/TextVQA
+    phase: val
+
+    collator: VQACollator
+    num_img_token: *img_len
+    tokenizer_path: *tokenizer_path
+    collate_mode: generate_vqa
+
+    transform:
+      aug_type: 'numpy'
+      resolution: *image_size
