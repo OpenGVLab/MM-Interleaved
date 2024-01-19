@@ -6,7 +6,7 @@ This is the official repository of **MM-Interleaved**: an end-to-end generative 
 
 ## Introduction
 
-**MM-Interleaved** is a new end-to-end generative model for interleaved image-text modeling. It introduces a novel fine-grained multi-modal feature synchronizer named **MMFS**, allowing it to recognize multi-scale high-resolution features across multiple images for producing accurate textual descriptions and visually consistent images auto-regressively. Please refer to our [paper]() for more technical details.
+**MM-Interleaved** is a new end-to-end generative model for interleaved image-text modeling. It introduces a novel fine-grained multi-modal feature synchronizer named **MMFS**, allowing it to recognize multi-scale high-resolution features across multiple images for producing accurate textual descriptions and visually consistent images auto-regressively. Please refer to our [paper](https://arxiv.org/pdf/2401.10208.pdf) for more technical details.
 
 ![](docs/figures/arch.png)
 
@@ -185,7 +185,12 @@ We thank the great work from [OpenFlamingo](https://github.com/mlfoundations/ope
 If you find MM-Interleaved helpful, please consider giving this repository a star :star: and citing in your publications.
 
 ```BibTeX
-
+@article{tian2024mminterleaved,
+  title={MM-Interleaved: Interleaved Image-Text Generative Modeling via Multi-modal Feature Synchronizer}, 
+  author={Tian, Changyao and Zhu, Xizhou and Xiong, Yuwen and Wang, Weiyun and Chen, Zhe and Wang, Wenhai and Chen, Yuntao and Lu, Lewei and Lu, Tong and Zhou, Jie and Li, Hongsheng and Qiao, Yu and Dai, Jifeng},
+  journal={arXiv preprint arXiv:2401.10208},
+  year={2024},
+}
 ```
 
 
