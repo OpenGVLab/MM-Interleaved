@@ -41,7 +41,7 @@ Step 2, download all pretrained model components from huggingface into the `asse
 python mm_interleaved/scripts/download_hf_models.py
 ```
 
-The pretrained model weights of MM-Interleaved are provided at this [link](https://huggingface.co/OpenGVLab/MM-Interleaved/tree/main/mm_interleaved_pretrain), under Llama's [model license](https://github.com/facebookresearch/llama/blob/main/LICENSE). You can download them to `OUTPUT/mm_interleaved_pretrain` and use it for further inference, zero-shot evaluation or finetuning tasks.
+The pretrained model weights of MM-Interleaved (without instruction tuning or SFT) are provided at this [link](https://huggingface.co/OpenGVLab/MM-Interleaved/tree/main/mm_interleaved_pretrain), under Llama's [model license](https://github.com/facebookresearch/llama/blob/main/LICENSE). You can download them to `OUTPUT/mm_interleaved_pretrain` and use it for further inference, zero-shot evaluation or finetuning tasks.
 
 
 
